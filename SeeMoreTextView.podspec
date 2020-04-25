@@ -5,8 +5,8 @@ Pod::Spec.new do |spec|
   spec.version      = "0.0.1"
   spec.summary      = "Expandable see more in textview"
 
-    
-    spec.license      = { :type => "MIT", :file => "FILE_LICENSE" }
+    spec.homepage = "https://github.com/Ankitkarna/SeeMoreTextView"
+    spec.license      = { :type => "MIT", :file => "LICENSE" }
 
   spec.author             = { "Ankit" => "ankit.karna2011@gmail.com" }
 
