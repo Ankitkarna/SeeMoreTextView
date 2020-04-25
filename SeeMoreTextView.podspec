@@ -14,6 +14,7 @@ Pod::Spec.new do |spec|
 
 
   spec.source       = { :git => "https://github.com/Ankitkarna/SeeMoreTextView.git", :tag => "#{spec.version}" }
+  spec.swift_version = "5.0"
 
 
   spec.source_files  = "SeeMoreTextView/Sources"
