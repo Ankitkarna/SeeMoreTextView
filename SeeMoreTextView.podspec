@@ -1,0 +1,21 @@
+
+Pod::Spec.new do |spec|
+
+  spec.name         = "SeeMoreTextView"
+  spec.version      = "0.0.1"
+  spec.summary      = "Expandable see more in textview"
+
+    
+    spec.license      = { :type => "MIT", :file => "FILE_LICENSE" }
+
+  spec.author             = { "Ankit" => "ankit.karna2011@gmail.com" }
+
+   spec.platform     = :ios, "11.0"
+
+
+  spec.source       = { :git => "http://EXAMPLE/SeeMoreTextView.git", :tag => "#{spec.version}" }
+
+
+  spec.source_files  = "SeeMoreTextView/Sources"
+
+end
