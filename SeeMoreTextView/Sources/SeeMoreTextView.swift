@@ -75,7 +75,12 @@ public class SeeMoreTextView: UITextView {
         let textContainerLength = layoutManager.characterRangeThatFits(textContainer: textContainer).length
         guard let originalText = originalText else { return false }
         let originalTextLength = originalText.string.length
-        return textContainerLength < originalTextLength
+        if textContainerLength < originalTextLength {
+            return true
+        } else if textStorage.string != originalText.string {
+            return true
+        }
+        return false
     }
     
     override init(frame: CGRect, textContainer: NSTextContainer?) {
