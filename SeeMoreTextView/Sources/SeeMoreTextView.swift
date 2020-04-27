@@ -19,14 +19,23 @@ public class SeeMoreTextView: UITextView {
     public var isToggleAnimated = true
     public var onSizeChange: (() -> Void)?
    
-    private var originalText: NSMutableAttributedString?
+    private var originalStringText: NSMutableAttributedString?
+    private var originalAttributedText: NSAttributedString?
+    
+    private var originalText: NSAttributedString? {
+        if let attributedText = originalAttributedText {
+            return attributedText
+        } else if let text = originalStringText {
+            return text
+        }
+        return nil
+    }
     
     
     override public var font: UIFont? {
         didSet {
             if let font = font {
-                
-                if let originalText = originalText {
+                if let originalText = originalStringText {
                      originalText.addAttribute(.font, value: font, range: NSRange(location: 0, length: originalText.length))
                 }
                
@@ -38,8 +47,7 @@ public class SeeMoreTextView: UITextView {
     override public var textColor: UIColor? {
         didSet {
             if let textColor = textColor {
-                
-                if let originalText = originalText {
+                if let originalText = originalStringText {
                     originalText.addAttribute(.foregroundColor, value: textColor, range: NSRange(location: 0, length: originalText.length))
                 }
             }
@@ -51,7 +59,15 @@ public class SeeMoreTextView: UITextView {
             var attributes: [NSAttributedString.Key: Any] = [:]
             if let font = font { attributes[.font] = font }
             if let textColor = textColor { attributes[.foregroundColor] = textColor }
-            originalText = NSMutableAttributedString(string: text, attributes: attributes)
+            originalStringText = NSMutableAttributedString(string: text, attributes: attributes)
+            originalAttributedText = nil
+        }
+    }
+    
+    public override var attributedText: NSAttributedString! {
+        didSet {
+            originalAttributedText = attributedText
+            originalStringText = nil
         }
     }
     
@@ -129,6 +145,7 @@ public class SeeMoreTextView: UITextView {
     private func invalidateLayoutManager() {
         let charRange = layoutManager.characterRangeThatFits(textContainer: textContainer)
         layoutManager.invalidateLayout(forCharacterRange: charRange, actualCharacterRange: nil)
+        textContainer.size = CGSize(width: bounds.size.width, height: CGFloat.greatestFiniteMagnitude)
     }
     
     private func addSeeMoreLabel() {
@@ -138,17 +155,8 @@ public class SeeMoreTextView: UITextView {
     }
     
     private func removeSeeMoreLabelIfAny() {
-        let replacingText = originalText!.mutableCopy() as! NSMutableAttributedString
-         let rangeThatFitsContainer = layoutManager.characterRangeThatFits(textContainer: textContainer)
-        let lastCharacterIndex = characterIndexBeforeTrim(range: rangeThatFitsContainer)
-        if lastCharacterIndex > 0 {
-            let replacingRange = NSRange(location: 0, length: lastCharacterIndex - 1)
-            replacingText.replaceCharacters(in: replacingRange, with: "")
-            
-            let originalTextRange = NSRange(location: lastCharacterIndex - 1, length: textStorage.string.length - lastCharacterIndex + 1)
-            textStorage.replaceCharacters(in: originalTextRange, with: replacingText)
-        }
-       
+        let originalTextRange = NSRange(location: 0, length: textStorage.string.length)
+        textStorage.replaceCharacters(in: originalTextRange, with: originalText!)
     }
     
     private func rangeToReplaceWithReadMoreText() -> NSRange {
