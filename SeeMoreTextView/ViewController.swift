@@ -15,6 +15,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupNavigationBar()
     }
     
     let shortText = "Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu"
@@ -33,11 +34,21 @@ class ViewController: UIViewController {
         
         let textViewFont = UIFont.systemFont(ofSize: 16)
         textView.font = textViewFont
-        textView.maximumNumberOfLines = 5
         let attributes: [NSAttributedString.Key: Any] = [.font: textViewFont, .foregroundColor: UIColor.lightGray]
         textView.attributedSeeMoreText = NSMutableAttributedString(string: "... Read More", attributes: attributes)
+    
     }
-
+    
+    private func setupNavigationBar() {
+        let nextButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(nextButtonTapped))
+        navigationItem.rightBarButtonItem = nextButton
+    }
+    
+    @objc private func nextButtonTapped() {
+        let controller = ExampleTableController()
+        controller.text = longText
+        navigationController?.pushViewController(controller, animated: true)
+    }
 
 }
 

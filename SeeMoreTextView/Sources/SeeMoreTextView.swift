@@ -16,20 +16,21 @@ public class SeeMoreTextView: UITextView {
     }
     
     public var attributedSeeMoreText: NSMutableAttributedString!
-   
     public var isToggleAnimated = true
+    public var onIntrinsicContentSizeChange: (() -> Void)?
+   
+    private var originalText: NSMutableAttributedString?
     
-    private let seeMoreTextStorage = SeeMoreTextStorage()
-    
-    private var originalText: NSMutableAttributedString!
     
     override public var font: UIFont? {
         didSet {
             if let font = font {
-                originalText.addAttribute(.font, value: font, range: NSRange(location: 0, length: originalText.length))
-                attributedSeeMoreText.addAttribute(.font, value: font, range: NSRange(location: 0, length: attributedSeeMoreText.length))
                 
-                seeMoreTextStorage.addAttribute(.font, value: font, range: NSRange(location: 0, length: seeMoreTextStorage.string.length))
+                if let originalText = originalText {
+                     originalText.addAttribute(.font, value: font, range: NSRange(location: 0, length: originalText.length))
+                }
+               
+                attributedSeeMoreText.addAttribute(.font, value: font, range: NSRange(location: 0, length: attributedSeeMoreText.length))
             }
         }
     }
@@ -37,8 +38,10 @@ public class SeeMoreTextView: UITextView {
     override public var textColor: UIColor? {
         didSet {
             if let textColor = textColor {
-                originalText.addAttribute(.foregroundColor, value: textColor, range: NSRange(location: 0, length: originalText.length))
-                 seeMoreTextStorage.addAttribute(.foregroundColor, value: textColor, range: NSRange(location: 0, length: seeMoreTextStorage.string.length))
+                
+                if let originalText = originalText {
+                    originalText.addAttribute(.foregroundColor, value: textColor, range: NSRange(location: 0, length: originalText.length))
+                }
             }
         }
     }
@@ -49,13 +52,12 @@ public class SeeMoreTextView: UITextView {
             if let font = font { attributes[.font] = font }
             if let textColor = textColor { attributes[.foregroundColor] = textColor }
             originalText = NSMutableAttributedString(string: text, attributes: attributes)
-            
-            seeMoreTextStorage.replaceCharacters(in: NSRange(location: 0, length: seeMoreTextStorage.length), with: originalText)
         }
     }
     
     private var isTextTrimmed: Bool {
         let textContainerLength = layoutManager.characterRangeThatFits(textContainer: textContainer).length
+        guard let originalText = originalText else { return false }
         let originalTextLength = originalText.string.length
         return textContainerLength < originalTextLength
     }
@@ -78,13 +80,12 @@ public class SeeMoreTextView: UITextView {
     }
     
     private func setupUI() {
-        textStorage.removeLayoutManager(layoutManager)
-        seeMoreTextStorage.addLayoutManager(layoutManager)
         isScrollEnabled = false
         isEditable = false
         textContainer.lineFragmentPadding = 0
         textContainerInset = .zero
         textContainer.maximumNumberOfLines = maximumNumberOfLines
+        layoutManager.allowsNonContiguousLayout = false
         
         let defaultReadMoreText = "See More"
         let attributedReadMoreText = NSMutableAttributedString(string: "... ")
@@ -110,37 +111,43 @@ public class SeeMoreTextView: UITextView {
     }
     
     private func toggleSeeMoreLabel() {
+        
         if isTextTrimmed {
             textContainer.maximumNumberOfLines = 0
             removeSeeMoreLabelIfAny()
         } else {
             textContainer.maximumNumberOfLines = maximumNumberOfLines
         }
+        invalidateLayout()
+    }
+    
+    private func invalidateLayout() {
         invalidateIntrinsicContentSize()
+        onIntrinsicContentSizeChange?()
     }
     
     private func addSeeMoreLabel() {
         let range = rangeToReplaceWithReadMoreText()
         guard range.location != NSNotFound else { return }
-        seeMoreTextStorage.replaceCharacters(in: range, with: attributedSeeMoreText)
+        textStorage.replaceCharacters(in: range, with: attributedSeeMoreText)
     }
     
     private func removeSeeMoreLabelIfAny() {
-        let originalTextRange = NSRange(location: 0, length: seeMoreTextStorage.length)
-        seeMoreTextStorage.replaceCharacters(in: originalTextRange, with: originalText)
+        let originalTextRange = NSRange(location: 0, length: textStorage.string.length)
+        textStorage.replaceCharacters(in: originalTextRange, with: originalText!)
     }
     
     private func rangeToReplaceWithReadMoreText() -> NSRange {
         let rangeThatFitsContainer = layoutManager.characterRangeThatFits(textContainer: textContainer)
-        if NSMaxRange(rangeThatFitsContainer) == originalText.string.length {
+        if textStorage.string != originalText!.string { //see more is already added
             return NSMakeRange(NSNotFound, 0)
-        }
-        else {
+        } else if NSMaxRange(rangeThatFitsContainer) == originalText!.string.length {
+            return NSMakeRange(NSNotFound, 0)
+        } else {
             let lastCharacterIndex = characterIndexBeforeTrim(range: rangeThatFitsContainer)
             if lastCharacterIndex > 0 {
-                return NSMakeRange(lastCharacterIndex, seeMoreTextStorage.string.length - lastCharacterIndex)
-            }
-            else {
+                return NSMakeRange(lastCharacterIndex, textStorage.string.length - lastCharacterIndex)
+            } else {
                 return NSMakeRange(NSNotFound, 0)
             }
         }

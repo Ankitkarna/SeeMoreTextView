@@ -28,3 +28,9 @@ extension NSLayoutManager {
     }
     
 }
+
+extension String {
+    var length: Int {
+        return utf16.count
+    }
+}
