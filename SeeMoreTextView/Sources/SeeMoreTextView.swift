@@ -17,7 +17,7 @@ public class SeeMoreTextView: UITextView {
     
     public var attributedSeeMoreText: NSMutableAttributedString!
     public var isToggleAnimated = true
-    public var onIntrinsicContentSizeChange: (() -> Void)?
+    public var onSizeChange: (() -> Void)?
    
     private var originalText: NSMutableAttributedString?
     
@@ -111,7 +111,7 @@ public class SeeMoreTextView: UITextView {
     }
     
     private func toggleSeeMoreLabel() {
-        
+        invalidateLayoutManager()
         if isTextTrimmed {
             textContainer.maximumNumberOfLines = 0
             removeSeeMoreLabelIfAny()
@@ -123,7 +123,12 @@ public class SeeMoreTextView: UITextView {
     
     private func invalidateLayout() {
         invalidateIntrinsicContentSize()
-        onIntrinsicContentSizeChange?()
+        onSizeChange?()
+    }
+    
+    private func invalidateLayoutManager() {
+        let charRange = layoutManager.characterRangeThatFits(textContainer: textContainer)
+        layoutManager.invalidateLayout(forCharacterRange: charRange, actualCharacterRange: nil)
     }
     
     private func addSeeMoreLabel() {
@@ -133,8 +138,17 @@ public class SeeMoreTextView: UITextView {
     }
     
     private func removeSeeMoreLabelIfAny() {
-        let originalTextRange = NSRange(location: 0, length: textStorage.string.length)
-        textStorage.replaceCharacters(in: originalTextRange, with: originalText!)
+        let replacingText = originalText!.mutableCopy() as! NSMutableAttributedString
+         let rangeThatFitsContainer = layoutManager.characterRangeThatFits(textContainer: textContainer)
+        let lastCharacterIndex = characterIndexBeforeTrim(range: rangeThatFitsContainer)
+        if lastCharacterIndex > 0 {
+            let replacingRange = NSRange(location: 0, length: lastCharacterIndex - 1)
+            replacingText.replaceCharacters(in: replacingRange, with: "")
+            
+            let originalTextRange = NSRange(location: lastCharacterIndex - 1, length: textStorage.string.length - lastCharacterIndex + 1)
+            textStorage.replaceCharacters(in: originalTextRange, with: replacingText)
+        }
+       
     }
     
     private func rangeToReplaceWithReadMoreText() -> NSRange {
